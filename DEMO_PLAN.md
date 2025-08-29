@@ -234,7 +234,7 @@ This demo showcases how AI can transform personal journaling into an intelligent
 ### **🐕 Day 1: Getting Max (Copy-Paste Ready)**
 
 ```
-Today I bought Max! I always wanted a pet and stuff. He's such a bundle of energy and already feels like family. The way he looks at me with those bright eyes - it's like he's been waiting for me his whole life. I can't wait to create so many memories with him and watch him grow. This feels like the beginning of something really special.
+Today I bought Max! I always wanted some one like him. He's such a bundle of energy and already feels like family. The way he looks at me with those bright eyes - it's like he's been waiting for me his whole life. I can't wait to create so many memories with him and watch him grow. This feels like the beginning of something really special.
 ```
 
 **Image to Upload**: Any dog photo (system will auto-detect as Max)
@@ -248,7 +248,7 @@ Today I bought Max! I always wanted a pet and stuff. He's such a bundle of energ
 Today I got a nice idea about a product in AI niche. I'm thinking of building Project X — an LLM + RAG app that acts as a second brain for humans and provides infinite memory to AI agents. I've been reading about various AI company valuations and the numbers are absolutely mind-blowing. Companies like Anthropic are valued at $18+ billion, OpenAI at even higher numbers. The pace of innovation and investment in this space is unprecedented. This got me thinking about building something innovative that could actually make a difference. The possibilities seem endless right now.
 ```
 
-**URL to Add**: `https://techcrunch.com/ai-company-valuations-2025`
+**URL to Add**: `https://techcrunch.com/llm-rag-companies`
 **Expected Response**: "Did you build further on top of your Project X?"
 
 ---
