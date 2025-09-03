@@ -84,11 +84,10 @@ export default function ChatInterface() {
     );
   };
 
-  const minWait = 1200;
-  const pineVectorMs = Math.max(Number(data.pinecone.wait.vectorDb), minWait);
-  const pineLlmMs = Math.max(Number(data.pinecone.wait.llm), minWait);
-  const cortexVectorMs = Math.max(Number(data.cortex.wait.vectorDb), minWait);
-  const cortexLlmMs = Math.max(Number(data.cortex.wait.llm), minWait);
+  const pineVectorMs = Math.max(Number(data.pinecone.wait.vectorDb), 0);
+  const pineLlmMs = Math.max(Number(data.pinecone.wait.llm), 0);
+  const cortexVectorMs = Math.max(Number(data.cortex.wait.vectorDb), 0);
+  const cortexLlmMs = Math.max(Number(data.cortex.wait.llm), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white">
@@ -274,104 +273,107 @@ export default function ChatInterface() {
 
             {/* Cortex */}
             <div className="relative group">
-              <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-purple-400 to-pink-500 opacity-25 blur group-hover:opacity-40 transition" />
-              <div className="relative rounded-3xl bg-white backdrop-blur border border-purple-200 shadow-xl overflow-hidden min-h-0 flex flex-col">
-                <div className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
+              <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-slate-400 to-slate-600 opacity-20 blur group-hover:opacity-30 transition" />
+              <div className="relative rounded-3xl bg-slate-900 backdrop-blur border border-slate-700 shadow-xl overflow-hidden min-h-0 flex flex-col">
+                <div className="flex items-center p-4 bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                    <h2 className="text-lg font-semibold text-purple-700">Cortex</h2>
+                    <h2 className="text-lg font-semibold text-white">Cortex</h2>
                   </div>
                 </div>
 
                 <div className="p-6 flex-1 flex flex-col space-y-4">
-                  {/* Context */}
-                  {!cortexContextVisible ? (
-                    <div className="animate-pulse">
-                      <div className="h-4 w-32 bg-purple-100 rounded mb-3" />
-                      <div className="h-24 bg-slate-100 rounded-xl" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-xl p-4 border border-purple-200 bg-white">
-                        <div className="text-xs font-medium text-purple-700 mb-2">Answer</div>
-                        <div className="text-slate-800">
-                          <ReactMarkdown
-                            components={{
-                              h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-purple-800">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 text-purple-800">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-purple-800">{children}</h3>,
-                              p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
-                              ul: ({ children }) => <ul className="mb-3 ml-4 list-disc space-y-1">{children}</ul>,
-                              ol: ({ children }) => <ol className="mb-3 ml-4 list-decimal space-y-1">{children}</ol>,
-                              li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                              strong: ({ children }) => <strong className="font-semibold text-purple-900">{children}</strong>,
-                              em: ({ children }) => <em className="italic text-purple-800">{children}</em>,
-                              code: ({ children }) => <code className="bg-purple-100 px-1.5 py-0.5 rounded text-sm font-mono text-purple-900">{children}</code>,
-                              pre: ({ children }) => <pre className="bg-slate-100 p-3 rounded-lg overflow-x-auto mb-3 text-sm">{children}</pre>,
-                              blockquote: ({ children }) => <blockquote className="border-l-4 border-purple-300 pl-4 italic text-purple-800 mb-3">{children}</blockquote>,
-                            }}
-                          >
-                            {data.cortex.answer}
-                          </ReactMarkdown>
-                        </div>
+                  {/* Content */}
+                  <div className="flex flex-col space-y-4 flex-1">
+                    {/* Context */}
+                    {!cortexContextVisible ? (
+                      <div className="animate-pulse">
+                        <div className="h-4 w-32 bg-slate-700 rounded mb-3" />
+                        <div className="h-24 bg-slate-800 rounded-xl" />
                       </div>
-                      <button
-                        onClick={() => setCortexShowContext((v) => !v)}
-                        className="text-sm text-purple-700 hover:text-purple-900 inline-flex items-center gap-1"
-                      >
-                        {cortexShowContext ? 'Hide context' : 'Show context'}
-                        <svg className={`w-4 h-4 transition-transform ${cortexShowContext ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                      </button>
-                      {cortexShowContext && (
-                        <div className="rounded-xl p-4 border border-purple-200 bg-purple-50">
-                          <div className="text-xs font-medium text-purple-700 mb-2">Retrieved Context</div>
-                          <div className="text-sm text-slate-700">
+                    ) : (
+                      <>
+                        <div className="rounded-xl p-4 border border-slate-700 bg-slate-800">
+                          <div className="text-xs font-medium text-purple-400 mb-2">Answer</div>
+                          <div className="text-slate-200">
                             <ReactMarkdown
                               components={{
-                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-purple-800">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-purple-800">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-purple-800">{children}</h3>,
-                                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
-                                ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
-                                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                                strong: ({ children }) => <strong className="font-semibold text-purple-900">{children}</strong>,
-                                em: ({ children }) => <em className="italic text-purple-800">{children}</em>,
-                                code: ({ children }) => <code className="bg-purple-100 px-1 py-0.5 rounded text-xs font-mono text-purple-900">{children}</code>,
-                                pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
-                                blockquote: ({ children }) => <blockquote className="border-l-3 border-purple-300 pl-3 italic text-purple-800 mb-2">{children}</blockquote>,
+                                h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-purple-300">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 text-purple-300">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-purple-300">{children}</h3>,
+                                p: ({ children }) => <p className="mb-3 leading-relaxed text-slate-300">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-3 ml-4 list-disc space-y-1 text-slate-300">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-3 ml-4 list-decimal space-y-1 text-slate-300">{children}</ol>,
+                                li: ({ children }) => <li className="leading-relaxed text-slate-300">{children}</li>,
+                                strong: ({ children }) => <strong className="font-semibold text-purple-300">{children}</strong>,
+                                em: ({ children }) => <em className="italic text-slate-400">{children}</em>,
+                                code: ({ children }) => <code className="bg-slate-700 px-1.5 py-0.5 rounded text-sm font-mono text-white">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-slate-800 p-3 rounded-lg overflow-x-auto mb-3 text-sm text-slate-300 border border-slate-600">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-4 border-purple-500 pl-4 italic text-slate-400 mb-3">{children}</blockquote>,
                               }}
                             >
-                              {data.cortex.context}
+                              {data.cortex.answer}
                             </ReactMarkdown>
                           </div>
                         </div>
-                      )}
+                                              <button
+                          onClick={() => setCortexShowContext((v) => !v)}
+                          className="text-sm text-purple-400 hover:text-purple-300 inline-flex items-center gap-1 self-start"
+                        >
+                          {cortexShowContext ? 'Hide context' : 'Show context'}
+                          <svg className={`w-4 h-4 transition-transform ${cortexShowContext ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        {cortexShowContext && (
+                          <div className="rounded-xl p-4 border border-slate-700 bg-slate-800/50">
+                            <div className="text-xs font-medium text-purple-400 mb-2">Retrieved Context</div>
+                            <div className="text-sm text-slate-300">
+                              <ReactMarkdown
+                                components={{
+                                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-purple-300">{children}</h1>,
+                                  h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-purple-300">{children}</h2>,
+                                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-purple-300">{children}</h3>,
+                                  p: ({ children }) => <p className="mb-2 leading-relaxed text-slate-300">{children}</p>,
+                                  ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1 text-slate-300">{children}</ul>,
+                                  ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1 text-slate-300">{children}</ol>,
+                                  li: ({ children }) => <li className="leading-relaxed text-slate-300">{children}</li>,
+                                  strong: ({ children }) => <strong className="font-semibold text-purple-300">{children}</strong>,
+                                  em: ({ children }) => <em className="italic text-slate-400">{children}</em>,
+                                  code: ({ children }) => <code className="bg-slate-700 px-1 py-0.5 rounded text-xs font-mono text-purple-300">{children}</code>,
+                                  pre: ({ children }) => <pre className="bg-slate-800 p-2 rounded overflow-x-auto mb-2 text-xs text-slate-300 border border-slate-600">{children}</pre>,
+                                  blockquote: ({ children }) => <blockquote className="border-l-3 border-purple-500 pl-3 italic text-slate-400 mb-2">{children}</blockquote>,
+                                }}
+                              >
+                                {data.cortex.context}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        )}
                     </>
                   )}
+                </div>
 
-                  {/* Answer loading state */}
+                {/* Answer loading state */}
                   {!cortexAnswerVisible ? (
-                    <div className="flex items-center gap-3 p-4 rounded-xl border border-purple-500/20 bg-purple-500/5">
+                    <div className="flex items-center gap-3 p-4 rounded-xl border border-slate-600 bg-slate-800/50">
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-                      <span className="text-sm text-purple-700">Generating answer…</span>
+                      <span className="text-sm text-slate-300">Generating answer…</span>
                     </div>
                   ) : (
                     /* Latency Display */
-                    <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                      <div className="text-xs font-medium text-purple-700 mb-3">Performance Metrics</div>
+                    <div className="mt-6 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                      <div className="text-xs font-medium text-purple-400 mb-3">Performance Metrics</div>
                       <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="bg-white rounded-lg p-3 border border-purple-100">
-                          <div className="text-lg font-semibold text-purple-700">{cortexVectorMs}ms</div>
-                          <div className="text-xs text-purple-600">Vector DB</div>
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs}ms</div>
+                          <div className="text-xs text-slate-400">Vector DB</div>
                         </div>
-                        <div className="bg-white rounded-lg p-3 border border-purple-100">
-                          <div className="text-lg font-semibold text-purple-700">{cortexLlmMs}ms</div>
-                          <div className="text-xs text-purple-600">LLM</div>
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexLlmMs}ms</div>
+                          <div className="text-xs text-slate-400">LLM</div>
                         </div>
-                        <div className="bg-white rounded-lg p-3 border border-purple-100">
-                          <div className="text-lg font-semibold text-purple-700">{cortexVectorMs + cortexLlmMs}ms</div>
-                          <div className="text-xs text-purple-600">Total</div>
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs + cortexLlmMs}ms</div>
+                          <div className="text-xs text-slate-400">Total</div>
                         </div>
                       </div>
                     </div>
