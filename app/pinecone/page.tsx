@@ -213,8 +213,27 @@ export default function ChatInterface() {
                       </button>
                       {pineShowContext && (
                         <div className="rounded-xl p-4 border border-emerald-200 bg-emerald-50">
-                          <div className="text-xs font-medium text-emerald-700 mb-1">Retrieved Context</div>
-                          <div className="text-sm text-slate-700 whitespace-pre-wrap">{data.pinecone.context}</div>
+                          <div className="text-xs font-medium text-emerald-700 mb-2">Retrieved Context</div>
+                          <div className="text-sm text-slate-700">
+                            <ReactMarkdown
+                              components={{
+                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-emerald-800">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-emerald-800">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-emerald-800">{children}</h3>,
+                                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
+                                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                                strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
+                                em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
+                                code: ({ children }) => <code className="bg-emerald-100 px-1 py-0.5 rounded text-xs font-mono text-emerald-900">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-3 border-emerald-300 pl-3 italic text-emerald-800 mb-2">{children}</blockquote>,
+                              }}
+                            >
+                              {data.pinecone.context}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                     </>
@@ -302,8 +321,27 @@ export default function ChatInterface() {
                       </button>
                       {cortexShowContext && (
                         <div className="rounded-xl p-4 border border-purple-200 bg-purple-50">
-                          <div className="text-xs font-medium text-purple-700 mb-1">Retrieved Context</div>
-                          <div className="text-sm text-slate-700 whitespace-pre-wrap">{data.cortex.context}</div>
+                          <div className="text-xs font-medium text-purple-700 mb-2">Retrieved Context</div>
+                          <div className="text-sm text-slate-700">
+                            <ReactMarkdown
+                              components={{
+                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-purple-800">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-purple-800">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-purple-800">{children}</h3>,
+                                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
+                                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                                strong: ({ children }) => <strong className="font-semibold text-purple-900">{children}</strong>,
+                                em: ({ children }) => <em className="italic text-purple-800">{children}</em>,
+                                code: ({ children }) => <code className="bg-purple-100 px-1 py-0.5 rounded text-xs font-mono text-purple-900">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-3 border-purple-300 pl-3 italic text-purple-800 mb-2">{children}</blockquote>,
+                              }}
+                            >
+                              {data.cortex.context}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       )}
                     </>
