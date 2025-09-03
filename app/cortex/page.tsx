@@ -169,6 +169,7 @@ export default function CortexDemoPage() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [insightText, setInsightText] = useState<string>("");
   const [proactivePrompt, setProactivePrompt] = useState<string | null>(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
   const [demoEntries, setDemoEntries] = useState<Entry[]>([]);
   const [modalImage, setModalImage] = useState<string | null>(null);
@@ -427,6 +428,9 @@ export default function CortexDemoPage() {
       const currentStep = demoStep;
       setDemoStep(prev => prev + 1);
       
+      // Show loading while Intelligent Suggestions are being prepared
+      setSuggestionsLoading(true);
+
       setTimeout(() => {
         if (currentStep === 0) {
           // Day 1: After user posts about Max (without saying "dog")
@@ -444,6 +448,8 @@ export default function CortexDemoPage() {
           // Day 5: After SF return post
           setProactivePrompt("It sounds like you had a great trip! How's Max adjusting to having you back?");
         }
+        // Done preparing suggestions
+        setSuggestionsLoading(false);
       }, delayMs());
     }, delayMs());
   }
@@ -563,7 +569,19 @@ export default function CortexDemoPage() {
                   <div className="text-xl text-violet-800 mb-2">
                     <strong>💡 Intelligent Suggestions</strong>
                   </div>
-                  {proactivePrompt ? (
+                  {suggestionsLoading ? (
+                    <div className="w-full">
+                      <div className="flex items-center gap-2 text-violet-700">
+                        <span className="inline-block h-4 w-4 rounded-full border-2 border-violet-300 border-t-violet-600 animate-spin" />
+                        <span className="text-sm font-medium">Updating suggestions…</span>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <div className="h-3 w-3/4 rounded bg-violet-100/70 animate-pulse" />
+                        <div className="h-3 w-5/6 rounded bg-violet-100/70 animate-pulse" />
+                        <div className="h-3 w-2/3 rounded bg-violet-100/70 animate-pulse" />
+                      </div>
+                    </div>
+                  ) : proactivePrompt ? (
                     <>
                       <div className="text-lg text-violet-700 mb-3">
                         {proactivePrompt}
