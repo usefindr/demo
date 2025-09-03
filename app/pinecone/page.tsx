@@ -32,16 +32,52 @@ export default function ChatInterface() {
   const [pineShowContext, setPineShowContext] = useState(false);
   const [cortexShowContext, setCortexShowContext] = useState(false);
 
-  const timeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  // Streaming states
+  const [pineAnswerStreamed, setPineAnswerStreamed] = useState('');
+  const [cortexAnswerStreamed, setCortexAnswerStreamed] = useState('');
+
+  const timeoutsRef = useRef<Array<NodeJS.Timeout | number>>([]);
 
   const clearAllTimers = () => {
     timeoutsRef.current.forEach((id) => clearTimeout(id));
     timeoutsRef.current = [];
   };
 
+  // Streaming function
+  const streamText = (fullText: string, setter: (text: string) => void, speed: number = 20) => {
+    let currentText = '';
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index < fullText.length) {
+        currentText += fullText[index];
+        setter(currentText);
+        index++;
+      } else {
+        clearInterval(interval);
+      }
+    }, speed);
+
+    timeoutsRef.current.push(interval);
+  };
+
   useEffect(() => {
     return () => clearAllTimers();
   }, []);
+
+  // Stream Pinecone answer after all waits complete
+  useEffect(() => {
+    if (pineconeAnswerVisible && pineAnswerStreamed === '') {
+      streamText(data.pinecone.answer, setPineAnswerStreamed, 15);
+    }
+  }, [pineconeAnswerVisible, pineAnswerStreamed, data.pinecone.answer]);
+
+  // Stream Cortex answer after all waits complete
+  useEffect(() => {
+    if (cortexAnswerVisible && cortexAnswerStreamed === '') {
+      streamText(data.cortex.answer, setCortexAnswerStreamed, 15);
+    }
+  }, [cortexAnswerVisible, cortexAnswerStreamed, data.cortex.answer]);
 
   useEffect(() => {
     if (pineconeAnswerVisible && cortexAnswerVisible) {
@@ -61,7 +97,7 @@ export default function ChatInterface() {
     setCortexAnswerVisible(false);
     clearAllTimers();
 
-    const minWait = 1200;
+    const minWait = 200;
     const pineVectorMs = Math.max(Number(data.pinecone.wait.vectorDb), minWait);
     const pineLlmMs = Math.max(Number(data.pinecone.wait.llm), minWait);
     const cortexVectorMs = Math.max(Number(data.cortex.wait.vectorDb), minWait);
@@ -201,8 +237,11 @@ export default function ChatInterface() {
                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-300 pl-4 italic text-emerald-800 mb-3">{children}</blockquote>,
                               }}
                             >
-                              {data.pinecone.answer}
+                              {pineAnswerStreamed}
                             </ReactMarkdown>
+                            {pineAnswerStreamed !== data.pinecone.answer && (
+                              <span className="inline-block w-2 h-5 bg-emerald-500 animate-pulse ml-1"></span>
+                            )}
                           </div>
                         </div>
                         <button
@@ -217,23 +256,23 @@ export default function ChatInterface() {
                             <div className="text-xs font-medium text-emerald-700 mb-2">Retrieved Context</div>
                             <div className="text-sm text-slate-700">
                               <ReactMarkdown
-                                components={{
-                                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-emerald-800">{children}</h1>,
-                                  h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-emerald-800">{children}</h2>,
-                                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-emerald-800">{children}</h3>,
-                                  p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
-                                  ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
-                                  ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
-                                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                                  strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
-                                  em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
-                                  code: ({ children }) => <code className="bg-emerald-100 px-1 py-0.5 rounded text-xs font-mono text-emerald-900">{children}</code>,
-                                  pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
-                                  blockquote: ({ children }) => <blockquote className="border-l-3 border-emerald-300 pl-3 italic text-emerald-800 mb-2">{children}</blockquote>,
-                                }}
-                              >
-                                {data.pinecone.context}
-                              </ReactMarkdown>
+                              components={{
+                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-emerald-800">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-emerald-800">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-emerald-800">{children}</h3>,
+                                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
+                                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                                strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
+                                em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
+                                code: ({ children }) => <code className="bg-emerald-100 px-1 py-0.5 rounded text-xs font-mono text-emerald-900">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-3 border-emerald-300 pl-3 italic text-emerald-800 mb-2">{children}</blockquote>,
+                              }}
+                            >
+                              {data.pinecone.context}
+                            </ReactMarkdown>
                             </div>
                           </div>
                         )}
@@ -312,8 +351,11 @@ export default function ChatInterface() {
                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-purple-500 pl-4 italic text-slate-400 mb-3">{children}</blockquote>,
                               }}
                             >
-                              {data.cortex.answer}
+                              {cortexAnswerStreamed}
                             </ReactMarkdown>
+                            {cortexAnswerStreamed !== data.cortex.answer && (
+                              <span className="inline-block w-2 h-5 bg-purple-500 animate-pulse ml-1"></span>
+                            )}
                           </div>
                         </div>
                                               <button
