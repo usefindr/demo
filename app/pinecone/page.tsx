@@ -160,11 +160,11 @@ export default function ChatInterface() {
 
         {/* Panels */}
         {(hasAsked || !isLoading) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             {/* Pinecone */}
             <div className="relative group">
               <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 opacity-25 blur group-hover:opacity-40 transition" />
-              <div className="relative rounded-3xl bg-white backdrop-blur border border-emerald-200 shadow-xl overflow-hidden">
+              <div className="relative rounded-3xl bg-white backdrop-blur border border-emerald-200 shadow-xl overflow-hidden min-h-0 flex flex-col">
                 <div className="flex items-center p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -172,72 +172,75 @@ export default function ChatInterface() {
                   </div>
                 </div>
 
-                <div className="p-6 space-y-4">
-                  {/* Context */}
-                  {!pineconeContextVisible ? (
-                    <div className="animate-pulse">
-                      <div className="h-4 w-32 bg-emerald-100 rounded mb-3" />
-                      <div className="h-24 bg-slate-100 rounded-xl" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-xl p-4 border border-emerald-200 bg-white">
-                        <div className="text-xs font-medium text-emerald-700 mb-2">Answer</div>
-                        <div className="text-slate-800">
-                          <ReactMarkdown
-                            components={{
-                              h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-emerald-800">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 text-emerald-800">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-emerald-800">{children}</h3>,
-                              p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
-                              ul: ({ children }) => <ul className="mb-3 ml-4 list-disc space-y-1">{children}</ul>,
-                              ol: ({ children }) => <ol className="mb-3 ml-4 list-decimal space-y-1">{children}</ol>,
-                              li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                              strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
-                              em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
-                              code: ({ children }) => <code className="bg-emerald-100 px-1.5 py-0.5 rounded text-sm font-mono text-emerald-900">{children}</code>,
-                              pre: ({ children }) => <pre className="bg-slate-100 p-3 rounded-lg overflow-x-auto mb-3 text-sm">{children}</pre>,
-                              blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-300 pl-4 italic text-emerald-800 mb-3">{children}</blockquote>,
-                            }}
-                          >
-                            {data.pinecone.answer}
-                          </ReactMarkdown>
-                        </div>
+                <div className="p-6 flex-1 flex flex-col space-y-4">
+                  {/* Content */}
+                  <div className="flex flex-col space-y-4 flex-1">
+                    {/* Context */}
+                    {!pineconeContextVisible ? (
+                      <div className="animate-pulse">
+                        <div className="h-4 w-32 bg-emerald-100 rounded mb-3" />
+                        <div className="h-24 bg-slate-100 rounded-xl" />
                       </div>
-                      <button
-                        onClick={() => setPineShowContext((v) => !v)}
-                        className="text-sm text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"
-                      >
-                        {pineShowContext ? 'Hide context' : 'Show context'}
-                        <svg className={`w-4 h-4 transition-transform ${pineShowContext ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                      </button>
-                      {pineShowContext && (
-                        <div className="rounded-xl p-4 border border-emerald-200 bg-emerald-50">
-                          <div className="text-xs font-medium text-emerald-700 mb-2">Retrieved Context</div>
-                          <div className="text-sm text-slate-700">
+                    ) : (
+                      <>
+                        <div className="rounded-xl p-4 border border-emerald-200 bg-white">
+                          <div className="text-xs font-medium text-emerald-700 mb-2">Answer</div>
+                          <div className="text-slate-800">
                             <ReactMarkdown
                               components={{
-                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-emerald-800">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-emerald-800">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-emerald-800">{children}</h3>,
-                                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
-                                ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
+                                h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-emerald-800">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 text-emerald-800">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-emerald-800">{children}</h3>,
+                                p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-3 ml-4 list-disc space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-3 ml-4 list-decimal space-y-1">{children}</ol>,
                                 li: ({ children }) => <li className="leading-relaxed">{children}</li>,
                                 strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
                                 em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
-                                code: ({ children }) => <code className="bg-emerald-100 px-1 py-0.5 rounded text-xs font-mono text-emerald-900">{children}</code>,
-                                pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
-                                blockquote: ({ children }) => <blockquote className="border-l-3 border-emerald-300 pl-3 italic text-emerald-800 mb-2">{children}</blockquote>,
+                                code: ({ children }) => <code className="bg-emerald-100 px-1.5 py-0.5 rounded text-sm font-mono text-emerald-900">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-slate-100 p-3 rounded-lg overflow-x-auto mb-3 text-sm">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-300 pl-4 italic text-emerald-800 mb-3">{children}</blockquote>,
                               }}
                             >
-                              {data.pinecone.context}
+                              {data.pinecone.answer}
                             </ReactMarkdown>
                           </div>
                         </div>
-                      )}
-                    </>
-                  )}
+                        <button
+                          onClick={() => setPineShowContext((v) => !v)}
+                          className="text-sm text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 self-start"
+                        >
+                          {pineShowContext ? 'Hide context' : 'Show context'}
+                          <svg className={`w-4 h-4 transition-transform ${pineShowContext ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        {pineShowContext && (
+                          <div className="rounded-xl p-4 border border-emerald-200 bg-emerald-50">
+                            <div className="text-xs font-medium text-emerald-700 mb-2">Retrieved Context</div>
+                            <div className="text-sm text-slate-700">
+                              <ReactMarkdown
+                                components={{
+                                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-emerald-800">{children}</h1>,
+                                  h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-emerald-800">{children}</h2>,
+                                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-emerald-800">{children}</h3>,
+                                  p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                                  ul: ({ children }) => <ul className="mb-2 ml-3 list-disc space-y-1">{children}</ul>,
+                                  ol: ({ children }) => <ol className="mb-2 ml-3 list-decimal space-y-1">{children}</ol>,
+                                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                                  strong: ({ children }) => <strong className="font-semibold text-emerald-900">{children}</strong>,
+                                  em: ({ children }) => <em className="italic text-emerald-800">{children}</em>,
+                                  code: ({ children }) => <code className="bg-emerald-100 px-1 py-0.5 rounded text-xs font-mono text-emerald-900">{children}</code>,
+                                  pre: ({ children }) => <pre className="bg-slate-100 p-2 rounded overflow-x-auto mb-2 text-xs">{children}</pre>,
+                                  blockquote: ({ children }) => <blockquote className="border-l-3 border-emerald-300 pl-3 italic text-emerald-800 mb-2">{children}</blockquote>,
+                                }}
+                              >
+                                {data.pinecone.context}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
 
                   {/* Answer loading state */}
                   {!pineconeAnswerVisible ? (
@@ -272,7 +275,7 @@ export default function ChatInterface() {
             {/* Cortex */}
             <div className="relative group">
               <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-purple-400 to-pink-500 opacity-25 blur group-hover:opacity-40 transition" />
-              <div className="relative rounded-3xl bg-white backdrop-blur border border-purple-200 shadow-xl overflow-hidden">
+              <div className="relative rounded-3xl bg-white backdrop-blur border border-purple-200 shadow-xl overflow-hidden min-h-0 flex flex-col">
                 <div className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
@@ -280,7 +283,7 @@ export default function ChatInterface() {
                   </div>
                 </div>
 
-                <div className="p-6 space-y-4">
+                <div className="p-6 flex-1 flex flex-col space-y-4">
                   {/* Context */}
                   {!cortexContextVisible ? (
                     <div className="animate-pulse">
