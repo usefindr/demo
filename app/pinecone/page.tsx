@@ -131,7 +131,7 @@ export default function ChatInterface() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 mb-3">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-            Dual AI Comparator
+            Vector DBs comparison
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
             Pinecone vs Cortex
@@ -208,6 +208,27 @@ export default function ChatInterface() {
                 </div>
 
                 <div className="p-6 flex-1 flex flex-col space-y-4">
+                  {/* Latency Display - Top */}
+                  {pineconeAnswerVisible && (
+                    <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4">
+                      <div className="text-xs font-medium text-emerald-700 mb-3">Performance Metrics</div>
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
+                          <div className="text-lg font-semibold text-emerald-700">{pineVectorMs}ms</div>
+                          <div className="text-xs text-emerald-600">Vector DB</div>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
+                          <div className="text-lg font-semibold text-emerald-700">{pineLlmMs}ms</div>
+                          <div className="text-xs text-emerald-600">LLM</div>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
+                          <div className="text-lg font-semibold text-emerald-700">{pineVectorMs + pineLlmMs}ms</div>
+                          <div className="text-xs text-emerald-600">Total</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Content */}
                   <div className="flex flex-col space-y-4 flex-1">
                     {/* Context */}
@@ -286,26 +307,7 @@ export default function ChatInterface() {
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-sm text-emerald-700">Generating answer…</span>
                     </div>
-                  ) : (
-                    /* Latency Display */
-                    <div className="mt-6 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                      <div className="text-xs font-medium text-emerald-700 mb-3">Performance Metrics</div>
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
-                          <div className="text-lg font-semibold text-emerald-700">{pineVectorMs}ms</div>
-                          <div className="text-xs text-emerald-600">Vector DB</div>
-                        </div>
-                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
-                          <div className="text-lg font-semibold text-emerald-700">{pineLlmMs}ms</div>
-                          <div className="text-xs text-emerald-600">LLM</div>
-                        </div>
-                        <div className="bg-white rounded-lg p-3 border border-emerald-100">
-                          <div className="text-lg font-semibold text-emerald-700">{pineVectorMs + pineLlmMs}ms</div>
-                          <div className="text-xs text-emerald-600">Total</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -322,6 +324,27 @@ export default function ChatInterface() {
                 </div>
 
                 <div className="p-6 flex-1 flex flex-col space-y-4">
+                  {/* Latency Display - Top */}
+                  {cortexAnswerVisible && (
+                    <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                      <div className="text-xs font-medium text-purple-400 mb-3">Performance Metrics</div>
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs}ms</div>
+                          <div className="text-xs text-slate-400">Vector DB</div>
+                        </div>
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexLlmMs}ms</div>
+                          <div className="text-xs text-slate-400">LLM</div>
+                        </div>
+                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
+                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs + cortexLlmMs}ms</div>
+                          <div className="text-xs text-slate-400">Total</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Content */}
                   <div className="flex flex-col space-y-4 flex-1">
                     {/* Context */}
@@ -400,26 +423,7 @@ export default function ChatInterface() {
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
                       <span className="text-sm text-slate-300">Generating answer…</span>
                     </div>
-                  ) : (
-                    /* Latency Display */
-                    <div className="mt-6 p-4 bg-slate-800 rounded-xl border border-slate-700">
-                      <div className="text-xs font-medium text-purple-400 mb-3">Performance Metrics</div>
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
-                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs}ms</div>
-                          <div className="text-xs text-slate-400">Vector DB</div>
-                        </div>
-                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
-                          <div className="text-lg font-semibold text-purple-300">{cortexLlmMs}ms</div>
-                          <div className="text-xs text-slate-400">LLM</div>
-                        </div>
-                        <div className="bg-slate-900 rounded-lg p-3 border border-slate-600">
-                          <div className="text-lg font-semibold text-purple-300">{cortexVectorMs + cortexLlmMs}ms</div>
-                          <div className="text-xs text-slate-400">Total</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
