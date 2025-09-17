@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 type SearchChunk = {
   chunk_uuid: string;
@@ -96,6 +97,10 @@ export default function ConstructPage() {
   const [searchError, setSearchError] = useState<string>("");
   const [results, setResults] = useState<SearchChunk[]>([]);
 
+  const [llmAnswer, setLlmAnswer] = useState<string>("");
+  const [llmLoading, setLlmLoading] = useState<boolean>(false);
+  const [llmError, setLlmError] = useState<string>("");
+
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -142,6 +147,30 @@ export default function ConstructPage() {
       }
     }
   }, [highlight]);
+
+  const requestLlmAnswer = useCallback(async (q: string, chunks: SearchChunk[]) => {
+    try {
+      setLlmLoading(true);
+      setLlmError("");
+      setLlmAnswer("");
+      const res = await fetch("/api/construct?action=llm_answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q, chunks }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `LLM request failed (${res.status})`);
+      }
+      const data = (await res.json()) as { answer?: string };
+      setLlmAnswer(data.answer || "");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setLlmError(msg);
+    } finally {
+      setLlmLoading(false);
+    }
+  }, []);
 
   const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -223,6 +252,9 @@ export default function ConstructPage() {
     setSearching(true);
     setSearchError("");
     setResults([]);
+    setLlmAnswer("");
+    setLlmError("");
+    setLlmLoading(false);
     try {
       const res = await fetch("/api/construct/search", {
         method: "POST",
@@ -234,14 +266,18 @@ export default function ConstructPage() {
         throw new Error(txt || `Search failed (${res.status})`);
       }
       const data = (await res.json()) as SearchChunk[];
-      setResults(Array.isArray(data) ? data : []);
+      const arr = Array.isArray(data) ? data : [];
+      setResults(arr);
+      if (arr.length > 0) {
+        void requestLlmAnswer(query, arr);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setSearchError(msg);
     } finally {
       setSearching(false);
     }
-  }, [query, tenantId, subTenantId]);
+  }, [query, tenantId, subTenantId, requestLlmAnswer]);
 
   function findMatchWithinWindow(pageText: string, chunkText: string, approxStart: number, window: number = 150): number {
     if (!chunkText) return approxStart;
@@ -444,7 +480,18 @@ export default function ConstructPage() {
               </>
             )}
             {activeTab === "llm" && (
-              <div className="text-sm text-slate-500">LLM Answer will be displayed here.</div>
+              <div className="text-sm">
+                {llmLoading && <div className="text-slate-400">Generating answer…</div>}
+                {llmError && <div className="text-red-500">{llmError}</div>}
+                {!llmLoading && !llmError && !llmAnswer && (
+                  <div className="text-slate-500">No answer yet. Run a search to generate an answer.</div>
+                )}
+                {!llmLoading && !llmError && llmAnswer && (
+                  <div className="prose prose-invert prose-slate max-w-none">
+                    <ReactMarkdown>{llmAnswer}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -453,7 +500,19 @@ export default function ConstructPage() {
       {/* Right Pane: Page-wise PDF text with highlighting */}
       <div className="w-1/2 h-full overflow-auto">
         <div className="p-4">
-          <h2 className="text-lg font-semibold">Extracted PDF (page-wise)</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Extracted PDF (page-wise)</h2>
+            <button
+              onClick={() => {
+                setPages([]);
+                setHighlight(null);
+                setActiveChunkId(null);
+              }}
+              className="px-3 py-1.5 text-sm rounded bg-slate-800 border border-slate-700 hover:bg-slate-700"
+            >
+              Clear
+            </button>
+          </div>
           {pages.length === 0 ? (
             <div className="mt-2 text-sm text-slate-500">Upload a PDF to display its extracted text by page.</div>
           ) : null}

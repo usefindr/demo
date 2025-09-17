@@ -92,6 +92,13 @@ async function parsePdfPages(buffer: Buffer): Promise<string[]> {
 
 export async function POST(req: NextRequest) {
   try {
+    // Branch: delegate LLM answer generation
+    const requestUrl = new URL(req.url);
+    const action = requestUrl.searchParams.get('action');
+    if (action === 'llm_answer') {
+      return handleLlmAnswer(req);
+    }
+
     const apiKey = getEnvOrDefault('CORTEX_API_KEY');
     if (!apiKey) {
       return NextResponse.json(
@@ -100,9 +107,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const url = new URL(req.url);
-    const tenantIdFromQuery = url.searchParams.get('tenant_id') ?? undefined;
-    const subTenantIdFromQuery = url.searchParams.get('sub_tenant_id') ?? undefined;
+    const tenantIdFromQuery = requestUrl.searchParams.get('tenant_id') ?? undefined;
+    const subTenantIdFromQuery = requestUrl.searchParams.get('sub_tenant_id') ?? undefined;
 
     const form = await req.formData();
     const file = form.get('file');
@@ -155,6 +161,73 @@ export async function POST(req: NextRequest) {
     const pages = await pagesPromise;
 
     return NextResponse.json({ upload, pages });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: 'Unexpected server error', details: message }, { status: 500 });
+  }
+}
+
+type LlmAnswerRequest = {
+  query: string;
+  chunks: Array<{ chunk_uuid?: string; chunk_content?: string; source_id?: string; page?: number | null }>;
+};
+
+async function handleLlmAnswer(req: NextRequest) {
+  try {
+    const { query, chunks } = (await req.json()) as LlmAnswerRequest;
+    if (!query || !Array.isArray(chunks)) {
+      return NextResponse.json({ error: 'query and chunks are required' }, { status: 400 });
+    }
+
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
+    }
+
+    const systemPrompt = `You are a helpful assistant. You will be given a user query and a set of retrieved document chunks (with optional page numbers). Synthesize a concise, accurate answer strictly grounded in the provided chunks. If the chunks do not contain enough information, clearly say so. Always cite page numbers inline like (p.X) where relevant.`;
+
+    const contextBlocks = chunks
+      .map((c, i) => {
+        // Try to read a page number if present in the object
+        let page: number | null = null;
+        if (typeof (c as Record<string, unknown>).page === 'number') {
+          page = (c as Record<string, unknown>).page as number;
+        } else if (typeof (c as Record<string, unknown>).layout === 'object' && (c as Record<string, unknown>).layout !== null) {
+          const layoutObj = (c as Record<string, unknown>).layout as { page?: number };
+          if (typeof layoutObj.page === 'number') page = layoutObj.page;
+        }
+        const pageText = page ? `\nPage: ${page}` : '';
+        const content = (c.chunk_content ?? '').trim();
+        return `Chunk ${i + 1}:${pageText}\n${content}`;
+      })
+      .join('\n\n---\n\n');
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `User query:\n${query}\n\nRetrieved chunks:\n\n${contextBlocks}` },
+    ];
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.2,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return NextResponse.json({ error: 'OpenAI call failed', details: errText }, { status: res.status });
+    }
+
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content ?? '';
+    return NextResponse.json({ answer: content });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: 'Unexpected server error', details: message }, { status: 500 });
