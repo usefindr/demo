@@ -1,3 +1,19 @@
+## Construct Demo
+
+Environment variables required:
+
+- `CORTEX_API_KEY`: Bearer token for `https://api.usecortex.ai`
+- Optional `TENANT_ID` (defaults to `tenant_1234`)
+- Optional `SUB_TENANT_ID`
+
+Run locally:
+
+```bash
+npm run dev
+```
+
+Open `/construct`.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
