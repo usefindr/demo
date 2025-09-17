@@ -97,6 +97,7 @@ export default function ConstructPage() {
   const [results, setResults] = useState<SearchChunk[]>([]);
 
   const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   pageRefs.current = useMemo(() => Array.from({ length: pages.length }, () => null), [pages.length]);
 
@@ -257,35 +258,54 @@ export default function ConstructPage() {
     return safeApprox;
   }
 
-  const onChunkClick = useCallback((chunk: SearchChunk) => {
-    let layout = parseLayout(chunk.layout ?? null);
-    if (typeof layout == "string") {
-      layout = JSON.parse(layout) as LayoutData;
-    }
-    const pageNum = layout?.page ?? 1; // 1-based default 1
-    const pageIndex = Math.max(0, pageNum - 1);
-    const approxStart = layout?.offsets?.page_level_start_index ?? 0;
-    const chunkLen = chunk.chunk_content?.length ?? 0;
-    const pageText = pages[pageIndex] ?? "";
-
-    let start = approxStart;
-    if (chunk.chunk_content) {
-      const exact = pageText.slice(start, start + chunkLen);
-      if (exact !== chunk.chunk_content) {
-        start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 150);
+  const onChunkClick = useCallback(
+    (chunk: SearchChunk) => {
+      setActiveChunkId(chunk.chunk_uuid);
+      let layout = parseLayout(chunk.layout ?? null);
+      if (typeof layout == "string") {
+        layout = JSON.parse(layout) as LayoutData;
       }
-    }
-    // Always ensure some highlight length
-    const minLen = Math.max(20, chunkLen);
-    let end = start + minLen;
-    // Clamp to page bounds
-    start = clamp(start, 0, pageText.length);
-    end = clamp(end, start, pageText.length);
-    if (end <= start) {
-      end = Math.min(start + 20, pageText.length);
-    }
-    setHighlight({ pageIndex, start, end, chunkId: chunk.chunk_uuid, chunkText: chunk.chunk_content });
-  }, [pages]);
+      const pageNum = layout?.page ?? 1; // 1-based default 1
+      const pageIndex = Math.max(0, pageNum - 1);
+      const approxStart = layout?.offsets?.page_level_start_index ?? 0;
+      const chunkText = chunk.chunk_content ?? "";
+      const chunkLen = chunkText.length;
+      const pageText = pages[pageIndex] ?? "";
+
+      let start = approxStart;
+      if (chunk.chunk_content) {
+        const exact = pageText.slice(start, start + chunkLen);
+        if (exact !== chunk.chunk_content) {
+          start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 150);
+        }
+      }
+
+      let end = start + chunkLen;
+
+      // Clamp to page bounds
+      start = clamp(start, 0, pageText.length);
+      end = clamp(end, start, pageText.length);
+
+      // If highlighting logic provides a very small window, it's likely wrong.
+      // Fallback to searching the whole page for the chunk text.
+      if (end - start < chunkLen * 0.8 && chunk.chunk_content) {
+        const foundIndex = pageText.indexOf(chunk.chunk_content);
+        if (foundIndex !== -1) {
+          start = foundIndex;
+          end = start + chunk.chunk_content.length;
+        } else {
+          const foundIndexCI = pageText.toLowerCase().indexOf(chunk.chunk_content.toLowerCase());
+          if (foundIndexCI !== -1) {
+            start = foundIndexCI;
+            end = start + chunk.chunk_content.length;
+          }
+        }
+      }
+
+      setHighlight({ pageIndex, start, end, chunkId: chunk.chunk_uuid, chunkText: chunk.chunk_content });
+    },
+    [pages]
+  );
 
   return (
     <div className="w-full h-screen overflow-hidden flex bg-slate-900 text-white">
@@ -396,11 +416,14 @@ export default function ConstructPage() {
                       layout = JSON.parse(layout) as LayoutData;
                     }
                     const startIdx = layout?.offsets?.page_level_start_index ?? 0;
+                    const isActive = r.chunk_uuid === activeChunkId;
                     return (
                       <button
                         key={r.chunk_uuid}
                         onClick={() => onChunkClick(r)}
-                        className="w-full text-left border border-slate-700 rounded p-3 hover:bg-slate-800"
+                        className={`w-full text-left border border-slate-700 rounded p-3 ${
+                          isActive ? "bg-slate-700" : "hover:bg-slate-800"
+                        }`}
                       >
                         <div className="text-sm whitespace-pre-wrap text-slate-300 mb-2">
                           {r.chunk_content?.slice(0, 300) || "(empty chunk)"}
