@@ -100,6 +100,8 @@ export default function ConstructPage() {
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   pageRefs.current = useMemo(() => Array.from({ length: pages.length }, () => null), [pages.length]);
 
+  const [activeTab, setActiveTab] = useState<"chunks" | "llm">("chunks");
+
   // Persistence
   useEffect(() => {
     try {
@@ -286,42 +288,55 @@ export default function ConstructPage() {
   }, [pages]);
 
   return (
-    <div className="w-full h-screen overflow-hidden flex">
+    <div className="w-full h-screen overflow-hidden flex bg-slate-900 text-white">
       {/* Left Pane: Uploader + Chat/Search */}
-      <div className="w-1/2 h-full border-r border-gray-200 flex flex-col min-h-0">
-        <div className="p-4 border-b border-gray-200">
+      <div className="w-1/2 h-full border-r border-slate-700 flex flex-col min-h-0">
+        <div className="p-4 border-b border-slate-700">
           <h2 className="text-lg font-semibold">Upload PDF</h2>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <input
               type="text"
               placeholder="tenant_id (optional)"
-              className="border rounded px-2 py-1 text-sm"
+              className="border border-slate-600 bg-slate-800 rounded px-2 py-1 text-sm text-white placeholder-slate-400"
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
             />
             <input
               type="text"
               placeholder="sub_tenant_id (optional)"
-              className="border rounded px-2 py-1 text-sm"
+              className="border border-slate-600 bg-slate-800 rounded px-2 py-1 text-sm text-white placeholder-slate-400"
               value={subTenantId}
               onChange={(e) => setSubTenantId(e.target.value)}
             />
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <input type="file" accept="application/pdf" onChange={onFileChange} />
-            {uploading && <span className="text-sm text-gray-600">Uploading & parsing…</span>}
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={onFileChange}
+              className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-300 hover:file:bg-slate-600"
+            />
+            {uploading && <span className="text-sm text-slate-400">Uploading & parsing…</span>}
           </div>
-          {uploadError && <div className="mt-2 text-sm text-red-600">{uploadError}</div>}
+          {uploadError && <div className="mt-2 text-sm text-red-500">{uploadError}</div>}
           {fileId && (
-            <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+            <div className="mt-2 text-xs text-slate-400 flex items-center gap-2">
               <span className="font-mono break-all">file_id: {fileId}</span>
               <span className="inline-flex items-center gap-1">
-                <span className={`inline-block w-2 h-2 rounded-full ${indexingStatus === 'completed' ? 'bg-green-500' : indexingStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-400'}`}></span>
-                <span className="capitalize">{indexingStatus || (verifying ? 'verifying' : 'unknown')}</span>
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    indexingStatus === "completed"
+                      ? "bg-green-500"
+                      : indexingStatus === "failed"
+                      ? "bg-red-500"
+                      : "bg-yellow-400 animate-pulse"
+                  }`}
+                ></span>
+                <span className="capitalize">{indexingStatus || (verifying ? "verifying" : "unknown")}</span>
               </span>
             </div>
           )}
-          {indexingMessage && <div className="mt-1 text-[11px] text-gray-500">{indexingMessage}</div>}
+          {indexingMessage && <div className="mt-1 text-[11px] text-slate-500">{indexingMessage}</div>}
         </div>
 
         <div className="p-4 flex-1 flex flex-col min-h-0">
@@ -330,7 +345,7 @@ export default function ConstructPage() {
             <input
               type="text"
               placeholder="Ask something…"
-              className="flex-1 border rounded px-2 py-2"
+              className="flex-1 border border-slate-600 bg-slate-800 rounded px-2 py-2 text-white placeholder-slate-400"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(evt) => {
@@ -338,48 +353,76 @@ export default function ConstructPage() {
               }}
             />
             <button
-              className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 hover:bg-blue-700"
               onClick={onSearch}
               disabled={searching}
             >
               {searching ? "Searching…" : "Send"}
             </button>
           </div>
-          {searchError && <div className="mt-2 text-sm text-red-600">{searchError}</div>}
+          {searchError && <div className="mt-2 text-sm text-red-500">{searchError}</div>}
+
+          <div className="mt-4 border-b border-slate-700">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setActiveTab("chunks")}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === "chunks" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-400"
+                }`}
+              >
+                Chunks
+              </button>
+              <button
+                onClick={() => setActiveTab("llm")}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === "llm" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-400"
+                }`}
+              >
+                LLM Answer
+              </button>
+            </div>
+          </div>
 
           <div className="mt-4 flex-1 overflow-auto min-h-0">
-            {results.length === 0 && !searching && (
-              <div className="text-sm text-gray-500">No results yet. Ask a question to search.</div>
+            {activeTab === "chunks" && (
+              <>
+                {results.length === 0 && !searching && (
+                  <div className="text-sm text-slate-500">No results yet. Ask a question to search.</div>
+                )}
+                <div className="space-y-3">
+                  {results.map((r) => {
+                    let layout = parseLayout(r.layout ?? null);
+                    if (typeof layout == "string") {
+                      layout = JSON.parse(layout) as LayoutData;
+                    }
+                    const startIdx = layout?.offsets?.page_level_start_index ?? 0;
+                    return (
+                      <button
+                        key={r.chunk_uuid}
+                        onClick={() => onChunkClick(r)}
+                        className="w-full text-left border border-slate-700 rounded p-3 hover:bg-slate-800"
+                      >
+                        <div className="text-sm whitespace-pre-wrap text-slate-300 mb-2">
+                          {r.chunk_content?.slice(0, 300) || "(empty chunk)"}
+                          {r.chunk_content && r.chunk_content.length > 300 ? "…" : ""}
+                        </div>
+                        <div className="text-xs text-slate-400 flex justify-between w-full">
+                          <span>
+                            Page: {layout?.page ?? "?"}, start: {startIdx}
+                          </span>
+                          {typeof r.relevancy_score === "number" && (
+                            <span>score: {r.relevancy_score.toFixed(3)}</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
             )}
-            <div className="space-y-3">
-              {results.map((r) => {
-                let layout = parseLayout(r.layout ?? null);
-                if (typeof layout == "string") {
-                  layout = JSON.parse(layout) as LayoutData;
-                }
-                const pageLabel = layout?.page ? `p.${layout.page}` : "p.?";
-                const startIdx = layout?.offsets?.page_level_start_index ?? 0;
-                return (
-                  <button
-                    key={r.chunk_uuid}
-                    onClick={() => onChunkClick(r)}
-                    className="w-full text-left border rounded p-3 hover:bg-gray-50"
-                  >
-                    <div className="text-xs text-gray-500 mb-1">
-                      <span>{pageLabel}</span>
-                      {typeof r.relevancy_score === "number" && (
-                        <span className="ml-2">score: {r.relevancy_score.toFixed(3)}</span>
-                      )}
-                    </div>
-                    <div className="text-sm whitespace-pre-wrap">
-                      {r.chunk_content?.slice(0, 300) || "(empty chunk)"}
-                      {r.chunk_content && r.chunk_content.length > 300 ? "…" : ""}
-                    </div>
-                    <div className="mt-1 text-[11px] text-gray-500">start: {startIdx}</div>
-                  </button>
-                );
-              })}
-            </div>
+            {activeTab === "llm" && (
+              <div className="text-sm text-slate-500">LLM Answer will be displayed here.</div>
+            )}
           </div>
         </div>
       </div>
@@ -389,7 +432,7 @@ export default function ConstructPage() {
         <div className="p-4">
           <h2 className="text-lg font-semibold">Extracted PDF (page-wise)</h2>
           {pages.length === 0 ? (
-            <div className="mt-2 text-sm text-gray-500">Upload a PDF to display its extracted text by page.</div>
+            <div className="mt-2 text-sm text-slate-500">Upload a PDF to display its extracted text by page.</div>
           ) : null}
 
           <div className="mt-3 space-y-6">
@@ -403,10 +446,10 @@ export default function ConstructPage() {
                   ref={(el) => {
                     pageRefs.current[idx] = el;
                   }}
-                  className={`border rounded p-3 ${isHighlightedPage ? "ring-2 ring-yellow-400" : ""}`}
+                  className={`border border-slate-700 rounded p-3 ${isHighlightedPage ? "ring-2 ring-yellow-400" : ""}`}
                 >
-                  <div className="text-xs text-gray-500 mb-2">Page {idx + 1}</div>
-                  <div className="whitespace-pre-wrap break-words">
+                  <div className="text-xs text-slate-400 mb-2">Page {idx + 1}</div>
+                  <div className="whitespace-pre-wrap break-words text-slate-300">
                     {isHighlightedPage ? renderHighlighted(txt, start, end) : txt}
                   </div>
                 </div>
