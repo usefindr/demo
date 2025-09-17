@@ -87,6 +87,10 @@ export default function ConstructPage() {
   const [fileId, setFileId] = useState<string>("");
   const [pages, setPages] = useState<string[]>([]);
 
+  const [indexingStatus, setIndexingStatus] = useState<string>("");
+  const [indexingMessage, setIndexingMessage] = useState<string>("");
+  const [verifying, setVerifying] = useState<boolean>(false);
+
   const [query, setQuery] = useState<string>("");
   const [searching, setSearching] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string>("");
@@ -95,6 +99,37 @@ export default function ConstructPage() {
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   pageRefs.current = useMemo(() => Array.from({ length: pages.length }, () => null), [pages.length]);
+
+  // Persistence
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("construct_state_v1");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<{
+        tenantId: string;
+        subTenantId: string;
+        fileId: string;
+        pages: string[];
+        query: string;
+        indexingStatus: string;
+        indexingMessage: string;
+      }>;
+      if (parsed.tenantId) setTenantId(parsed.tenantId);
+      if (parsed.subTenantId) setSubTenantId(parsed.subTenantId);
+      if (parsed.fileId) setFileId(parsed.fileId);
+      if (Array.isArray(parsed.pages)) setPages(parsed.pages);
+      if (typeof parsed.query === "string") setQuery(parsed.query);
+      if (typeof parsed.indexingStatus === "string") setIndexingStatus(parsed.indexingStatus);
+      if (typeof parsed.indexingMessage === "string") setIndexingMessage(parsed.indexingMessage);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      const toStore = JSON.stringify({ tenantId, subTenantId, fileId, pages, query, indexingStatus, indexingMessage });
+      localStorage.setItem("construct_state_v1", toStore);
+    } catch {}
+  }, [tenantId, subTenantId, fileId, pages, query, indexingStatus, indexingMessage]);
 
   useEffect(() => {
     if (highlight) {
@@ -124,8 +159,11 @@ export default function ConstructPage() {
         throw new Error(txt || `Upload failed (${res.status})`);
       }
       const data = (await res.json()) as UploadResult;
-      setFileId(data.upload?.file_id ?? "");
+      const newFileId = data.upload?.file_id ?? "";
+      setFileId(newFileId);
       setPages(data.pages ?? []);
+      setIndexingStatus("queued");
+      setIndexingMessage("");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setUploadError(msg);
@@ -133,6 +171,49 @@ export default function ConstructPage() {
       setUploading(false);
     }
   }, [tenantId, subTenantId]);
+
+  // Verify indexing status with backoff when fileId changes
+  useEffect(() => {
+    if (!fileId) return;
+    let cancelled = false;
+    let attempt = 0;
+    setVerifying(true);
+
+    const verifyOnce = async () => {
+      try {
+        const res = await fetch("/api/construct/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file_id: fileId, tenant_id: tenantId || undefined }),
+        });
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        const data = (await res.json()) as { file_id: string; indexing_status: string; success?: boolean; message?: string };
+        if (cancelled) return;
+        setIndexingStatus(data.indexing_status);
+        setIndexingMessage(data.message || "");
+        if (data.indexing_status === "completed" || data.indexing_status === "failed") {
+          setVerifying(false);
+          return; // stop polling
+        }
+      } catch {
+        if (cancelled) return;
+        // keep trying with backoff
+      }
+
+      attempt += 1;
+      const delay = Math.min(16000, 1000 * Math.pow(2, attempt));
+      setTimeout(() => {
+        if (!cancelled) void verifyOnce();
+      }, delay);
+    };
+
+    void verifyOnce();
+    return () => {
+      cancelled = true;
+    };
+  }, [fileId, tenantId]);
 
   const onSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -159,27 +240,43 @@ export default function ConstructPage() {
     }
   }, [query, tenantId, subTenantId]);
 
+  function findMatchWithinWindow(pageText: string, chunkText: string, approxStart: number, window: number = 100): number {
+    if (!chunkText) return approxStart;
+    const startWindow = clamp(approxStart - window, 0, pageText.length);
+    const endWindow = clamp(approxStart + chunkText.length + window, 0, pageText.length);
+    const hay = pageText.slice(startWindow, endWindow);
+    const relIdx = hay.indexOf(chunkText);
+    if (relIdx >= 0) {
+      return startWindow + relIdx;
+    }
+    return approxStart;
+  }
+
   const onChunkClick = useCallback((chunk: SearchChunk) => {
     let layout = parseLayout(chunk.layout ?? null);
-    console.log(`Setting highlight to ${chunk.layout} layout`);
-
     if (typeof layout == "string") {
-        layout = JSON.parse(layout) as LayoutData;
-        console.log("Parsed layout", layout);
+      layout = JSON.parse(layout) as LayoutData;
     }
     const pageNum = layout?.page ?? 1; // 1-based default 1
     const pageIndex = Math.max(0, pageNum - 1);
-    const start = layout?.offsets?.page_level_start_index ?? 0 ;
-    const end = start + (chunk.chunk_content?.length ?? 0);
+    const approxStart = layout?.offsets?.page_level_start_index ?? 0;
+    const chunkLen = chunk.chunk_content?.length ?? 0;
+    const pageText = pages[pageIndex] ?? "";
 
-    console.log(`Setting highlight to ${pageIndex}, ${start}, ${end}`);
+    let start = approxStart;
+    // If the exact slice doesn't match chunk text, search within a small window around the offset
+    const exact = pageText.slice(start, start + chunkLen);
+    if (chunk.chunk_content && exact !== chunk.chunk_content) {
+      start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 100);
+    }
+    const end = start + chunkLen;
     setHighlight({ pageIndex, start, end, chunkId: chunk.chunk_uuid, chunkText: chunk.chunk_content });
   }, [pages]);
 
   return (
     <div className="w-full h-screen overflow-hidden flex">
       {/* Left Pane: Uploader + Chat/Search */}
-      <div className="w-1/2 h-full border-r border-gray-200 flex flex-col">
+      <div className="w-1/2 h-full border-r border-gray-200 flex flex-col min-h-0">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Upload PDF</h2>
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -203,10 +300,19 @@ export default function ConstructPage() {
             {uploading && <span className="text-sm text-gray-600">Uploading & parsing…</span>}
           </div>
           {uploadError && <div className="mt-2 text-sm text-red-600">{uploadError}</div>}
-          {fileId && <div className="mt-2 text-xs text-gray-600">file_id: {fileId}</div>}
+          {fileId && (
+            <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+              <span className="font-mono break-all">file_id: {fileId}</span>
+              <span className="inline-flex items-center gap-1">
+                <span className={`inline-block w-2 h-2 rounded-full ${indexingStatus === 'completed' ? 'bg-green-500' : indexingStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-400'}`}></span>
+                <span className="capitalize">{indexingStatus || (verifying ? 'verifying' : 'unknown')}</span>
+              </span>
+            </div>
+          )}
+          {indexingMessage && <div className="mt-1 text-[11px] text-gray-500">{indexingMessage}</div>}
         </div>
 
-        <div className="p-4 flex-1 flex flex-col">
+        <div className="p-4 flex-1 flex flex-col min-h-0">
           <h2 className="text-lg font-semibold">Chat / Search</h2>
           <div className="mt-2 flex gap-2">
             <input
@@ -215,8 +321,8 @@ export default function ConstructPage() {
               className="flex-1 border rounded px-2 py-2"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onSearch();
+              onKeyDown={(evt) => {
+                if (evt.key === "Enter") onSearch();
               }}
             />
             <button
@@ -229,13 +335,16 @@ export default function ConstructPage() {
           </div>
           {searchError && <div className="mt-2 text-sm text-red-600">{searchError}</div>}
 
-          <div className="mt-4 flex-1 overflow-auto">
+          <div className="mt-4 flex-1 overflow-auto min-h-0">
             {results.length === 0 && !searching && (
               <div className="text-sm text-gray-500">No results yet. Ask a question to search.</div>
             )}
             <div className="space-y-3">
               {results.map((r) => {
-                const layout = parseLayout(r.layout ?? null);
+                let layout = parseLayout(r.layout ?? null);
+                if (typeof layout == "string") {
+                  layout = JSON.parse(layout) as LayoutData;
+                }
                 const pageLabel = layout?.page ? `p.${layout.page}` : "p.?";
                 const startIdx = layout?.offsets?.page_level_start_index ?? 0;
                 return (
