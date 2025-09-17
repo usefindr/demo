@@ -309,34 +309,38 @@ export default function ConstructPage() {
       const pageText = pages[pageIndex] ?? "";
 
       let start = approxStart;
-      if (chunk.chunk_content) {
-        const exact = pageText.slice(start, start + chunkLen);
-        if (exact !== chunk.chunk_content) {
-          start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 150);
-        }
-      }
-
       let end = start + chunkLen;
 
-      // Clamp to page bounds
-      start = clamp(start, 0, pageText.length);
-      end = clamp(end, start, pageText.length);
-
-      // If highlighting logic provides a very small window, it's likely wrong.
-      // Fallback to searching the whole page for the chunk text.
-      if (end - start < chunkLen * 0.8 && chunk.chunk_content) {
-        const foundIndex = pageText.indexOf(chunk.chunk_content);
-        if (foundIndex !== -1) {
-          start = foundIndex;
-          end = start + chunk.chunk_content.length;
-        } else {
-          const foundIndexCI = pageText.toLowerCase().indexOf(chunk.chunk_content.toLowerCase());
-          if (foundIndexCI !== -1) {
-            start = foundIndexCI;
+      // Check if offsets exceed page bounds or if the exact match fails
+      const offsetsExceedBounds = approxStart >= pageText.length || end > pageText.length;
+      const exactMatch = pageText.slice(start, end) === chunkText;
+      
+      // If offsets exceed bounds or exact match fails, search for complete chunk content
+      if (offsetsExceedBounds || !exactMatch) {
+        if (chunk.chunk_content) {
+          // First try exact match
+          const foundIndex = pageText.indexOf(chunk.chunk_content);
+          if (foundIndex !== -1) {
+            start = foundIndex;
             end = start + chunk.chunk_content.length;
+          } else {
+            // Try case-insensitive match
+            const foundIndexCI = pageText.toLowerCase().indexOf(chunk.chunk_content.toLowerCase());
+            if (foundIndexCI !== -1) {
+              start = foundIndexCI;
+              end = start + chunk.chunk_content.length;
+            } else {
+              // If still not found, try windowed search as fallback
+              start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 150);
+              end = start + chunkLen;
+            }
           }
         }
       }
+
+      // Final clamp to page bounds
+      start = clamp(start, 0, pageText.length);
+      end = clamp(end, start, pageText.length);
 
       setHighlight({ pageIndex, start, end, chunkId: chunk.chunk_uuid, chunkText: chunk.chunk_content });
     },
@@ -390,6 +394,11 @@ export default function ConstructPage() {
                 ></span>
                 <span className="capitalize">{indexingStatus || (verifying ? "verifying" : "unknown")}</span>
               </span>
+            </div>
+          )}
+          {pages.length > 0 && (
+            <div className="mt-1 text-xs text-slate-400">
+              Total pages: {pages.length}
             </div>
           )}
           {indexingMessage && <div className="mt-1 text-[11px] text-slate-500">{indexingMessage}</div>}
