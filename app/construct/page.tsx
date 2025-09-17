@@ -31,11 +31,11 @@ type LayoutData = {
     document_level_start_index?: number;
     page_level_start_index?: number;
   };
-  page?: number; // 1-based
+  page?: number; 
 };
 
 type Highlight = {
-  pageIndex: number; // 0-based
+  pageIndex: number; 
   start: number;
   end: number;
   chunkId?: string;
