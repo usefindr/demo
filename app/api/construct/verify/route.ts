@@ -23,18 +23,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'file_id is required' }, { status: 400 });
     }
 
-    const payload = {
-      file_id,
-      tenant_id: tenant_id ?? getEnvOrDefault('TENANT_ID', 'tenant_1234'),
-    };
+    const url = new URL('https://api.usecortex.ai/upload/verify_processing');
+    url.searchParams.set('file_id', file_id);
+    const resolvedTenant = tenant_id ?? getEnvOrDefault('TENANT_ID', 'tenant_1234');
+    if (resolvedTenant) url.searchParams.set('tenant_id', resolvedTenant);
 
-    const res = await fetch('https://api.usecortex.ai/upload/verify_processing', {
+    const res = await fetch(url.toString(), {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {

@@ -240,16 +240,19 @@ export default function ConstructPage() {
     }
   }, [query, tenantId, subTenantId]);
 
-  function findMatchWithinWindow(pageText: string, chunkText: string, approxStart: number, window: number = 100): number {
+  function findMatchWithinWindow(pageText: string, chunkText: string, approxStart: number, window: number = 150): number {
     if (!chunkText) return approxStart;
-    const startWindow = clamp(approxStart - window, 0, pageText.length);
-    const endWindow = clamp(approxStart + chunkText.length + window, 0, pageText.length);
+    const safeApprox = clamp(approxStart, 0, Math.max(0, pageText.length - 1));
+    const startWindow = clamp(safeApprox - window, 0, pageText.length);
+    const endWindow = clamp(safeApprox + chunkText.length + window, 0, pageText.length);
     const hay = pageText.slice(startWindow, endWindow);
-    const relIdx = hay.indexOf(chunkText);
-    if (relIdx >= 0) {
-      return startWindow + relIdx;
-    }
-    return approxStart;
+    // exact
+    let relIdx = hay.indexOf(chunkText);
+    if (relIdx >= 0) return startWindow + relIdx;
+    // case-insensitive
+    relIdx = hay.toLowerCase().indexOf(chunkText.toLowerCase());
+    if (relIdx >= 0) return startWindow + relIdx;
+    return safeApprox;
   }
 
   const onChunkClick = useCallback((chunk: SearchChunk) => {
@@ -264,12 +267,21 @@ export default function ConstructPage() {
     const pageText = pages[pageIndex] ?? "";
 
     let start = approxStart;
-    // If the exact slice doesn't match chunk text, search within a small window around the offset
-    const exact = pageText.slice(start, start + chunkLen);
-    if (chunk.chunk_content && exact !== chunk.chunk_content) {
-      start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 100);
+    if (chunk.chunk_content) {
+      const exact = pageText.slice(start, start + chunkLen);
+      if (exact !== chunk.chunk_content) {
+        start = findMatchWithinWindow(pageText, chunk.chunk_content, approxStart, 150);
+      }
     }
-    const end = start + chunkLen;
+    // Always ensure some highlight length
+    const minLen = Math.max(20, chunkLen);
+    let end = start + minLen;
+    // Clamp to page bounds
+    start = clamp(start, 0, pageText.length);
+    end = clamp(end, start, pageText.length);
+    if (end <= start) {
+      end = Math.min(start + 20, pageText.length);
+    }
     setHighlight({ pageIndex, start, end, chunkId: chunk.chunk_uuid, chunkText: chunk.chunk_content });
   }, [pages]);
 
